@@ -319,6 +319,70 @@ export async function getAppointmentById(appointmentId) {
   }
 }
 
+/**
+ * Get appointments needing reminders (24 hours before appointment time)
+ * @returns {Promise<Array>} Array of appointments needing reminders
+ */
+export async function getAppointmentsNeedingReminders() {
+  try {
+    // Get appointments happening in 23-25 hours (24 hours +/- 1 hour window)
+    const now = new Date();
+    const reminderWindowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+    const reminderWindowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+
+    dbLogger.info('Looking for appointments needing reminders', {
+      windowStart: reminderWindowStart.toISOString(),
+      windowEnd: reminderWindowEnd.toISOString(),
+    });
+
+    const result = await sql`
+      SELECT *
+      FROM appointments
+      WHERE appointment_time >= ${reminderWindowStart.toISOString()}
+        AND appointment_time <= ${reminderWindowEnd.toISOString()}
+        AND status = 'confirmed'
+        AND (reminder_sent IS NULL OR reminder_sent = false)
+      ORDER BY appointment_time ASC
+    `;
+
+    dbLogger.info('Appointments needing reminders found', {
+      count: result.length,
+    });
+
+    return result;
+  } catch (error) {
+    dbLogger.error('Error fetching appointments needing reminders', error);
+    throw error;
+  }
+}
+
+/**
+ * Mark reminder as sent for an appointment
+ * @param {string} appointmentId - Appointment ID
+ * @returns {Promise<Object>} Updated appointment
+ */
+export async function markReminderSent(appointmentId) {
+  try {
+    const result = await sql`
+      UPDATE appointments
+      SET reminder_sent = true
+      WHERE id = ${appointmentId}
+      RETURNING *
+    `;
+
+    if (result.length === 0) {
+      throw new Error(`Appointment not found: ${appointmentId}`);
+    }
+
+    dbLogger.info('Reminder marked as sent', { appointmentId });
+
+    return result[0];
+  } catch (error) {
+    dbLogger.error('Error marking reminder as sent', error, { appointmentId });
+    throw error;
+  }
+}
+
 export default {
   createAppointment,
   getAppointmentsByPhone,
@@ -328,4 +392,6 @@ export default {
   createCallLog,
   updateCallLog,
   getAppointmentById,
+  getAppointmentsNeedingReminders,
+  markReminderSent,
 };

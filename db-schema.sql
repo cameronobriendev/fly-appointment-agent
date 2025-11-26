@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS appointments (
   google_calendar_event_id VARCHAR(255),
   status VARCHAR(50) DEFAULT 'confirmed',
   sms_sent BOOLEAN DEFAULT FALSE,
+  reminder_sent BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );

@@ -19,6 +19,7 @@ import { handleTwilioRouter } from './api/twilio/router.js';
 import { handleDemoCall } from './api/demo/call.js';
 import { rateLimitDemoCalls } from './middleware/rate-limit.js';
 import { validateDemoCallInput } from './middleware/validate-demo-call.js';
+import { startReminderScheduler } from './services/reminder-scheduler.js';
 // Admin API imports commented out - not needed for standalone appointment booking
 // import { requireAdminApiKey } from './api/admin/middleware.js';
 // import { getPrompts, updateDemoTemplate, updateClientTemplate, updateDemoFallbackTemplate } from './api/admin/prompts.js';
@@ -192,6 +193,9 @@ const server = app.listen(PORT, async () => {
     serverLogger.error('Database connection failed on startup', error);
     serverLogger.warn('Server will continue, but calls may fail');
   }
+
+  // Start appointment reminder scheduler (checks hourly for 24hr reminders)
+  startReminderScheduler();
 });
 
 // WebSocket server for Twilio streams
