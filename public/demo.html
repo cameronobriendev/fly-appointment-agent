@@ -78,6 +78,12 @@
       align-items: flex-start;
       gap: 12px;
     }
+    .calendar-embed {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 32px;
+    }
     .consent-checkbox {
       margin-top: 4px;
       width: 18px;
@@ -145,6 +151,22 @@
             </button>
 
             <div id="callStatus" class="call-status"></div>
+          </div>
+
+          <!-- Embedded Google Calendar -->
+          <div class="calendar-embed">
+            <h3 style="color: rgba(255, 255, 255, 0.9); margin-bottom: 16px; font-size: 18px;">Live Calendar</h3>
+            <p style="color: rgba(255, 255, 255, 0.6); margin-bottom: 16px; font-size: 14px;">
+              Watch your appointment appear in real-time after booking
+            </p>
+            <iframe
+              src="https://calendar.google.com/calendar/embed?src=e0d35f7dbd44c85cbba77c75a737a50641e2ee3c677415ade06ef199b8617660%40group.calendar.google.com&ctz=America%2FLos_Angeles&mode=WEEK&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0"
+              style="border: 0; border-radius: 8px;"
+              width="100%"
+              height="600"
+              frameborder="0"
+              scrolling="no"
+            ></iframe>
           </div>
         </div>
       </div>

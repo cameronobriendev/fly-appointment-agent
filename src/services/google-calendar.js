@@ -93,6 +93,25 @@ export async function checkAvailability(startTime, durationMinutes = 30) {
 }
 
 /**
+ * Mask phone number for privacy in calendar
+ * Converts +14168881234 to 416-881-****
+ * @param {string} phoneNumber - Full phone number
+ * @returns {string} Masked phone number
+ */
+function maskPhoneNumber(phoneNumber) {
+  // Remove +1 country code for display
+  const digits = phoneNumber.replace(/^\+1/, '').replace(/\D/g, '');
+
+  if (digits.length === 10) {
+    // Format as 416-881-****
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-****`;
+  }
+
+  // For non-standard formats, just mask last 4 digits
+  return phoneNumber.slice(0, -4) + '****';
+}
+
+/**
  * Create an appointment in Google Calendar
  * @param {Object} appointmentData - Appointment details
  * @returns {Promise<Object>} Created calendar event
@@ -119,10 +138,13 @@ export async function createAppointment(appointmentData) {
       startTime: startTime.toISOString(),
     });
 
+    // Mask phone number for privacy in public calendar
+    const maskedPhone = maskPhoneNumber(callerPhone);
+
     // Create calendar event
     const event = {
       summary: `${reason} - ${callerName}`,
-      description: `Patient: ${callerName}\nPhone: ${callerPhone}\nReason: ${reason}`,
+      description: `Patient: ${callerName}\nPhone: ${maskedPhone}\nReason: ${reason}`,
       start: {
         dateTime: startTime.toISOString(),
         timeZone: process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles',
