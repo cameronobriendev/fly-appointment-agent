@@ -8,13 +8,13 @@ export const APPOINTMENT_TOOLS = [
     type: 'function',
     function: {
       name: 'check_availability',
-      description: 'Check if a specific time slot is available on the calendar. Returns available or not available.',
+      description: 'Check if a specific time slot is available on the calendar. Returns available or not available. IMPORTANT: Convert natural language dates to YYYY-MM-DD format before calling.',
       parameters: {
         type: 'object',
         properties: {
           date: {
             type: 'string',
-            description: 'Date in YYYY-MM-DD format (e.g., 2024-03-15)',
+            description: 'Date in YYYY-MM-DD format (e.g., 2024-03-15). NEVER pass natural language like "this week" or "next Tuesday" - you MUST convert to YYYY-MM-DD format.',
           },
           time: {
             type: 'string',
@@ -33,13 +33,13 @@ export const APPOINTMENT_TOOLS = [
     type: 'function',
     function: {
       name: 'get_available_slots',
-      description: 'Get a list of all available time slots for a specific date. Returns array of available times.',
+      description: 'Get a list of all available time slots for a specific date. Returns array of available times. IMPORTANT: You must convert the user\'s natural language date (like "this week" or "next Tuesday") to YYYY-MM-DD format before calling this function.',
       parameters: {
         type: 'object',
         properties: {
           date: {
             type: 'string',
-            description: 'Date in YYYY-MM-DD format (e.g., 2024-03-15)',
+            description: 'Date in YYYY-MM-DD format (e.g., 2024-03-15). NEVER pass natural language like "this week" or "tomorrow" - you MUST convert to YYYY-MM-DD format.',
           },
           duration: {
             type: 'number',
