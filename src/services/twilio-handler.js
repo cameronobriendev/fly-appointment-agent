@@ -240,7 +240,12 @@ export async function handleTwilioStream(ws) {
 - Business Name: ${businessName}
 - Caller's Phone Number: ${formattedPhone}
 
-When confirming the phone number, say it slowly and clearly at a conversational pace. Instead of asking "What's the best phone number?", ask "Is ${formattedPhone} the best number to reach you?" Pause briefly between the area code and the rest of the number for clarity.`;
+When confirming the phone number, use this exact pattern:
+1. Say "Is ${formattedPhone}..."
+2. PAUSE for half a second (add ellipsis or comma for natural pause)
+3. Then continue: "...the best number to reach you?"
+
+This gives the caller time to process the number. Example: "Is (555) 123-4567... the best number to reach you?"`;
 
       twilioLogger.info('Using appointment booking prompt', {
         callSid,
