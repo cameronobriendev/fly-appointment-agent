@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Appointment Booking Demo - Cameron O'Brien</title>
+  <link rel="icon" type="image/png" href="/public/favicon.png">
+  <link rel="stylesheet" href="/public/demo.css">
+  <style>
+    .demo-form {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .form-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .form-hint {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 6px;
+    }
+    .call-status {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    .call-status.success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #86efac;
+      display: block;
+    }
+    .call-status.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      display: block;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .consent-group {
+      margin-top: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .consent-checkbox {
+      margin-top: 4px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .consent-label {
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+    }
+    .consent-label a {
+      color: #3b82f6;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <!-- Dynamic Navigation -->
+  <a href="https://cameronobrien.dev" class="nav-btn nav-btn-left" id="portfolioBtn">Back to Portfolio</a>
+  <a href="https://github.com/cameronobriendev" class="nav-btn nav-btn-right" id="githubBtn">See my Github</a>
+
+  <div class="container">
+    <header class="header">
+      <h1 class="title">AI Appointment Booking Demo</h1>
+      <p class="tagline">Real-time appointment scheduling with Google Calendar integration</p>
+    </header>
+
+    <main class="main">
+      <!-- Demo Call Section -->
+      <div class="demo-card">
+        <div class="demo-section">
+          <h2>Try It Live</h2>
+          <p class="demo-intro">Experience the AI appointment booking agent with your own custom business name. Enter your details below and we'll call you immediately.</p>
+
+          <div class="demo-form">
+            <div class="form-group">
+              <label class="form-label" for="businessName">Business Name</label>
+              <input
+                type="text"
+                id="businessName"
+                class="form-input"
+                placeholder="Smith Dental Clinic"
+                value="Dr. Smith's Dental Office"
+              >
+              <div class="form-hint">The AI will answer as this business</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="phoneNumber">Your Phone Number</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                class="form-input"
+                placeholder="+1 (555) 123-4567"
+                required
+              >
+              <div class="form-hint">We'll call you immediately - make sure you can answer</div>
+            </div>
+
+            <div class="consent-group">
+              <input
+                type="checkbox"
+                id="consentCheckbox"
+                class="consent-checkbox"
+                required
+              >
+              <label for="consentCheckbox" class="consent-label">
+                By submitting this form, I authorize cameronobrien.dev to call or text me at the phone number I provided for marketing using an artificial or prerecorded (including AI-generated) voice and/or an autodialer. Consent isn't required to buy. I can revoke consent at any time (e.g., reply STOP to texts). Msg/data rates may apply.
+              </label>
+            </div>
+
+            <button class="btn btn-primary" id="startCallBtn">
+              <span class="btn-text">Call Me Now →</span>
+            </button>
+
+            <div id="callStatus" class="call-status"></div>
+          </div>
+
+          <p style="margin-top: 24px; font-size: 14px; color: rgba(255, 255, 255, 0.6);">
+            <strong>Or call directly:</strong> <a href="tel:+17753765047" style="color: #3b82f6;">+1 (775) 376-5047</a> (uses default business name)
+          </p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Handle demo call button
+    const startCallBtn = document.getElementById('startCallBtn');
+    const businessNameInput = document.getElementById('businessName');
+    const phoneNumberInput = document.getElementById('phoneNumber');
+    const consentCheckbox = document.getElementById('consentCheckbox');
+    const callStatus = document.getElementById('callStatus');
+
+    startCallBtn.addEventListener('click', async () => {
+      const businessName = businessNameInput.value.trim();
+      const phoneNumber = phoneNumberInput.value.trim();
+
+      if (!businessName) {
+        showStatus('error', 'Please enter a business name');
+        return;
+      }
+
+      if (!phoneNumber) {
+        showStatus('error', 'Please enter your phone number');
+        return;
+      }
+
+      if (!consentCheckbox.checked) {
+        showStatus('error', 'Please agree to the consent terms to continue');
+        return;
+      }
+
+      startCallBtn.disabled = true;
+      startCallBtn.querySelector('.btn-text').textContent = 'Initiating Call...';
+
+      try {
+        const response = await fetch('/api/demo/call', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            businessName,
+            phoneNumber,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showStatus('success', `✅ Calling you now! Your phone should ring in 3-5 seconds. CallSid: ${data.callSid}`);
+        } else {
+          showStatus('error', data.error || 'Failed to initiate call');
+        }
+      } catch (error) {
+        showStatus('error', 'Network error: ' + error.message);
+      } finally {
+        setTimeout(() => {
+          startCallBtn.disabled = false;
+          startCallBtn.querySelector('.btn-text').textContent = 'Call Me Now →';
+        }, 5000);
+      }
+    });
+
+    function showStatus(type, message) {
+      callStatus.className = `call-status ${type}`;
+      callStatus.textContent = message;
+    }
+  </script>
+</body>
+</html>
