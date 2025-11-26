@@ -214,11 +214,19 @@ export async function handleTwilioStream(ws) {
       onCallStart();
 
       // Use hardcoded appointment booking prompt
-      const customPrompt = APPOINTMENT_BOOKING_PROMPT;
+      const businessName = customBusinessName || process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
+      const customPrompt = `${APPOINTMENT_BOOKING_PROMPT}
+
+## Current Call Information:
+- Business Name: ${businessName}
+- Caller's Phone Number: ${callerNumber}
+
+Use this phone number when asking for confirmation. Instead of asking "What's the best phone number to reach you?", ask "Is ${callerNumber} the best number to reach you for confirmation?"`;
 
       twilioLogger.info('Using appointment booking prompt', {
         callSid,
-        businessName: process.env.BUSINESS_NAME || "Dr. Smith's Dental Office",
+        businessName,
+        callerPhone: callerNumber,
       });
 
       // Initialize system message
