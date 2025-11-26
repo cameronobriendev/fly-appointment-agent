@@ -234,7 +234,15 @@ export async function handleTwilioStream(ws) {
       const businessName = process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
       const formattedPhone = formatPhoneForSpeech(callerNumber);
 
-      const customPrompt = `${APPOINTMENT_BOOKING_PROMPT}
+      // Get current date in readable format (e.g., "Tuesday, November 26, 2025")
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const customPrompt = `${APPOINTMENT_BOOKING_PROMPT.replace('{{CURRENT_DATE}}', currentDate)}
 
 ## Current Call Information:
 - Business Name: ${businessName}
