@@ -131,16 +131,11 @@ export async function createAppointment(appointmentData) {
         dateTime: endTime.toISOString(),
         timeZone: process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles',
       },
-      attendees: [
-        {
-          email: callerPhone + '@sms.example.com', // Placeholder
-          displayName: callerName,
-        },
-      ],
+      // Note: attendees removed - service account needs Domain-Wide Delegation to add attendees
+      // Patient info is already in summary and description
       reminders: {
         useDefault: false,
         overrides: [
-          { method: 'sms', minutes: 24 * 60 }, // 24 hours before
           { method: 'popup', minutes: 60 }, // 1 hour before
         ],
       },
@@ -278,7 +273,7 @@ export async function getAvailableSlots(date, slotDuration = 30) {
     endOfDay.setHours(parseInt(endHour), parseInt(endMin), 0, 0);
 
     calendarLogger.info('Getting available slots', {
-      date: date.toDateString(),
+      date: date, // date is already a string in YYYY-MM-DD format
       businessHours: `${businessStart}-${businessEnd}`,
     });
 
