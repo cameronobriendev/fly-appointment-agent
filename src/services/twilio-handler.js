@@ -68,6 +68,8 @@ export async function handleTwilioStream(ws) {
     appointmentBooked: false,
     appointmentId: null,
     googleCalendarEventId: null,
+    timezoneOffset: null, // Offset in hours from UTC (e.g., -8 for PST)
+    callerLocalTime: null, // Caller's current local time
   };
 
   // Services
@@ -547,7 +549,67 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
     });
 
     try {
-      if (functionName === 'check_availability') {
+      if (functionName === 'set_caller_timezone') {
+        // Parse caller's local time and calculate timezone offset
+        const { localTime } = args;
+
+        twilioLogger.info('Setting caller timezone', { localTime });
+
+        // Parse the time string (handles formats like "4:30 PM", "16:30", "4:30pm")
+        const timeMatch = localTime.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+        if (!timeMatch) {
+          return {
+            success: false,
+            message: 'Could not parse time. Please try again.'
+          };
+        }
+
+        let hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2] || '0');
+        const isPM = timeMatch[3]?.toLowerCase() === 'pm';
+        const isAM = timeMatch[3]?.toLowerCase() === 'am';
+
+        // Convert to 24-hour format
+        if (isPM && hours !== 12) hours += 12;
+        if (isAM && hours === 12) hours = 0;
+
+        // Get current server time
+        const serverTime = new Date();
+        const serverHours = serverTime.getUTCHours();
+        const serverMinutes = serverTime.getUTCMinutes();
+
+        // Calculate caller's time in minutes since midnight
+        const callerMinutes = hours * 60 + minutes;
+
+        // Calculate server time in minutes since midnight
+        const serverMinutesTotal = serverHours * 60 + serverMinutes;
+
+        // Calculate offset in hours (caller time - server time)
+        let offsetMinutes = callerMinutes - serverMinutesTotal;
+
+        // Handle day boundary crossings
+        if (offsetMinutes > 12 * 60) offsetMinutes -= 24 * 60;
+        if (offsetMinutes < -12 * 60) offsetMinutes += 24 * 60;
+
+        const offsetHours = Math.round(offsetMinutes / 60);
+
+        // Store in appointment data
+        appointmentData.timezoneOffset = offsetHours;
+        appointmentData.callerLocalTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+        twilioLogger.info('Timezone calculated', {
+          callerLocalTime: appointmentData.callerLocalTime,
+          timezoneOffset: offsetHours,
+          serverUTC: `${serverHours}:${serverMinutes}`
+        });
+
+        return {
+          success: true,
+          timezoneOffset: offsetHours,
+          message: 'Timezone set successfully'
+        };
+
+      } else if (functionName === 'check_availability') {
         // Check if a specific time slot is available
         const { date, time, duration = 30 } = args;
 
@@ -577,17 +639,49 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
         // Get all available slots for a date
         const { date, duration = 30 } = args;
 
+        // Get timezone offset (default to -8 for PST if not set)
+        const timezoneOffset = appointmentData.timezoneOffset || -8;
+
+        // Create date in caller's timezone
         const dateObj = new Date(`${date}T00:00:00`);
         const slots = await getAvailableSlots(dateObj, duration);
+
+        // Get caller's current time
+        const serverNow = new Date();
+        const callerNow = new Date(serverNow.getTime() + (timezoneOffset * 60 * 60 * 1000));
 
         twilioLogger.info('Available slots retrieved', {
           date,
           duration,
-          slotsFound: slots.length
+          slotsFound: slots.length,
+          timezoneOffset,
+          callerCurrentTime: callerNow.toISOString()
         });
 
+        // Filter out past times (only for today's date)
+        let filteredSlots = slots;
+        const requestedDate = new Date(date);
+        const callerToday = new Date(callerNow.getFullYear(), callerNow.getMonth(), callerNow.getDate());
+
+        if (requestedDate.getTime() === callerToday.getTime()) {
+          // It's today - filter out times that have already passed
+          // Add 2-hour buffer so they can't book something starting in 30 minutes
+          const minTime = new Date(callerNow.getTime() + (2 * 60 * 60 * 1000));
+
+          filteredSlots = slots.filter(slot => {
+            return slot.startTime.getTime() > minTime.getTime();
+          });
+
+          twilioLogger.info('Filtered past times for today', {
+            originalCount: slots.length,
+            filteredCount: filteredSlots.length,
+            callerNow: callerNow.toISOString(),
+            minTime: minTime.toISOString()
+          });
+        }
+
         // Format slots for LLM
-        const formattedSlots = slots.map(slot => {
+        const formattedSlots = filteredSlots.map(slot => {
           const timeStr = slot.startTime.toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',

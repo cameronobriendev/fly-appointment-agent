@@ -90,6 +90,23 @@ export const APPOINTMENT_TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'set_caller_timezone',
+      description: 'Set the caller\'s timezone based on their current local time. Call this EARLY in the conversation to ensure accurate date/time handling.',
+      parameters: {
+        type: 'object',
+        properties: {
+          localTime: {
+            type: 'string',
+            description: 'The caller\'s current local time (e.g., "4:30 PM", "16:30")',
+          },
+        },
+        required: ['localTime'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'update_appointment_info',
       description: 'Silently update appointment information as you collect it during the conversation. Do not announce this to the caller.',
       parameters: {
