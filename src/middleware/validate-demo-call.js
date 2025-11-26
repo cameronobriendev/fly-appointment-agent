@@ -104,20 +104,7 @@ function validatePhoneNumber(phone) {
  * Validation middleware for demo call requests
  */
 export function validateDemoCallInput(req, res, next) {
-  const { businessName, phoneNumber } = req.body;
-
-  // Validate business name
-  const sanitizedBusinessName = sanitizeBusinessName(businessName);
-  if (!sanitizedBusinessName) {
-    validationLogger.warn('Invalid business name', {
-      originalName: businessName,
-      ip: req.ip
-    });
-
-    return res.status(400).json({
-      error: 'Invalid business name. Please use alphanumeric characters only (max 100 characters).'
-    });
-  }
+  const { phoneNumber } = req.body;
 
   // Validate phone number
   const validatedPhone = validatePhoneNumber(phoneNumber);
@@ -133,11 +120,9 @@ export function validateDemoCallInput(req, res, next) {
   }
 
   // Replace request body with sanitized values
-  req.body.businessName = sanitizedBusinessName;
   req.body.phoneNumber = validatedPhone;
 
   validationLogger.debug('Input validation passed', {
-    businessName: sanitizedBusinessName,
     phoneNumber: validatedPhone,
     ip: req.ip
   });

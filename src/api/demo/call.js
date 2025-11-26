@@ -30,9 +30,9 @@ function initializeTwilio() {
  * Note: Input validation and rate limiting handled by middleware
  */
 export async function handleDemoCall(req, res) {
-  const { businessName, phoneNumber } = req.body;
+  const { phoneNumber } = req.body;
 
-  // At this point, businessName and phoneNumber are already validated and sanitized by middleware
+  // At this point, phoneNumber is already validated and sanitized by middleware
 
   try {
     const client = initializeTwilio();
@@ -48,19 +48,17 @@ export async function handleDemoCall(req, res) {
     }
 
     demoLogger.info('Initiating demo call', {
-      businessName,
       to: phoneNumber,
       from
     });
 
-    // Create TwiML that connects to our WebSocket stream with custom business name
+    // Create TwiML that connects to our WebSocket stream
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
     <Stream url="${streamUrl}">
       <Parameter name="To" value="${from}" />
       <Parameter name="From" value="${phoneNumber}" />
-      <Parameter name="BusinessName" value="${businessName}" />
     </Stream>
   </Connect>
   <Pause length="60"/>
@@ -75,19 +73,17 @@ export async function handleDemoCall(req, res) {
 
     demoLogger.info('Demo call initiated successfully', {
       callSid: call.sid,
-      to: phoneNumber,
-      businessName
+      to: phoneNumber
     });
 
     res.json({
       success: true,
       callSid: call.sid,
-      message: `Calling ${phoneNumber} with business name "${businessName}"`
+      message: `Calling ${phoneNumber} for Dr. Smith's Dental Office`
     });
 
   } catch (error) {
     demoLogger.error('Failed to initiate demo call', error, {
-      businessName,
       phoneNumber
     });
 

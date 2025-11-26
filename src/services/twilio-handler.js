@@ -51,7 +51,6 @@ export async function handleTwilioStream(ws) {
   let streamSid = null;
   let fromNumber = null;
   let toNumber = null;
-  let customBusinessName = null; // Custom business name from demo form
   let startTime = null;
   let endTime = null;
 
@@ -176,13 +175,11 @@ export async function handleTwilioStream(ws) {
    * @returns {string} Initial greeting text
    */
   function getInitialGreeting() {
-    // Use custom business name from demo form, or fallback to environment variable
-    const businessName = customBusinessName || process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
+    const businessName = process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
 
     twilioLogger.info('Using appointment booking greeting', {
       callSid,
-      businessName,
-      isCustom: !!customBusinessName
+      businessName
     });
 
     return `Hi! Thanks for calling ${businessName}. I can help you schedule an appointment. How can I help you today?`;
@@ -214,7 +211,7 @@ export async function handleTwilioStream(ws) {
       onCallStart();
 
       // Use hardcoded appointment booking prompt
-      const businessName = customBusinessName || process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
+      const businessName = process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
       const customPrompt = `${APPOINTMENT_BOOKING_PROMPT}
 
 ## Current Call Information:
@@ -841,10 +838,9 @@ Use this phone number when asking for confirmation. Instead of asking "What's th
         callSid = msg.start.callSid;
         streamSid = msg.start.streamSid;
 
-        // Extract phone numbers and custom business name from custom parameters (sent via Stream TwiML)
+        // Extract phone numbers from custom parameters (sent via Stream TwiML)
         fromNumber = msg.start.customParameters?.From;
         toNumber = msg.start.customParameters?.To;
-        customBusinessName = msg.start.customParameters?.BusinessName;
 
         startTime = new Date().toISOString();
 
@@ -852,7 +848,6 @@ Use this phone number when asking for confirmation. Instead of asking "What's th
           callSid,
           from: fromNumber,
           to: toNumber,
-          customBusinessName,
           customParameters: msg.start.customParameters,
         });
 

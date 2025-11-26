@@ -113,21 +113,9 @@
       <div class="demo-card">
         <div class="demo-section">
           <h2>Try It Live</h2>
-          <p class="demo-intro">Experience the AI appointment booking agent with your own custom business name. Enter your details below and we'll call you immediately.</p>
+          <p class="demo-intro">Experience the AI appointment booking agent for Dr. Smith's Dental Office. Enter your phone number below and we'll call you immediately to schedule an appointment.</p>
 
           <div class="demo-form">
-            <div class="form-group">
-              <label class="form-label" for="businessName">Business Name</label>
-              <input
-                type="text"
-                id="businessName"
-                class="form-input"
-                placeholder="Smith Dental Clinic"
-                value="Dr. Smith's Dental Office"
-              >
-              <div class="form-hint">The AI will answer as this business</div>
-            </div>
-
             <div class="form-group">
               <label class="form-label" for="phoneNumber">Your Phone Number</label>
               <input
@@ -166,19 +154,12 @@
   <script>
     // Handle demo call button
     const startCallBtn = document.getElementById('startCallBtn');
-    const businessNameInput = document.getElementById('businessName');
     const phoneNumberInput = document.getElementById('phoneNumber');
     const consentCheckbox = document.getElementById('consentCheckbox');
     const callStatus = document.getElementById('callStatus');
 
     startCallBtn.addEventListener('click', async () => {
-      const businessName = businessNameInput.value.trim();
       const phoneNumber = phoneNumberInput.value.trim();
-
-      if (!businessName) {
-        showStatus('error', 'Please enter a business name');
-        return;
-      }
 
       if (!phoneNumber) {
         showStatus('error', 'Please enter your phone number');
@@ -200,7 +181,6 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            businessName,
             phoneNumber,
           }),
         });
