@@ -171,8 +171,27 @@ export async function handleTwilioStream(ws) {
   }
 
   /**
+   * Format phone number for natural speech
+   * Converts +15551234567 to (555) 123-4567 so TTS reads it naturally
+   * @param {string} phoneNumber - E.164 format phone number
+   * @returns {string} Formatted phone number for speech
+   */
+  function formatPhoneForSpeech(phoneNumber) {
+    // Remove +1 country code for US numbers
+    let digits = phoneNumber.replace(/^\+1/, '').replace(/\D/g, '');
+
+    if (digits.length === 10) {
+      // Format as (555) 123-4567
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+
+    // For non-US numbers, just remove the + so it doesn't say "plus"
+    return phoneNumber.replace('+', '');
+  }
+
+  /**
    * Get initial greeting for appointment booking
-   * @returns {string} Initial greeting text
+   * @returns {string} Initial greeting text (shorter = less latency)
    */
   function getInitialGreeting() {
     const businessName = process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
@@ -182,7 +201,8 @@ export async function handleTwilioStream(ws) {
       businessName
     });
 
-    return `Hi! Thanks for calling ${businessName}. I can help you schedule an appointment. How can I help you today?`;
+    // Direct and concise greeting for minimal latency
+    return `Thanks for calling ${businessName}. Would you like to book an appointment?`;
   }
 
   /**
@@ -212,13 +232,15 @@ export async function handleTwilioStream(ws) {
 
       // Use hardcoded appointment booking prompt
       const businessName = process.env.BUSINESS_NAME || "Dr. Smith's Dental Office";
+      const formattedPhone = formatPhoneForSpeech(callerNumber);
+
       const customPrompt = `${APPOINTMENT_BOOKING_PROMPT}
 
 ## Current Call Information:
 - Business Name: ${businessName}
-- Caller's Phone Number: ${callerNumber}
+- Caller's Phone Number: ${formattedPhone}
 
-Use this phone number when asking for confirmation. Instead of asking "What's the best phone number to reach you?", ask "Is ${callerNumber} the best number to reach you for confirmation?"`;
+When confirming the phone number, say it slowly and clearly at a conversational pace. Instead of asking "What's the best phone number?", ask "Is ${formattedPhone} the best number to reach you?" Pause briefly between the area code and the rest of the number for clarity.`;
 
       twilioLogger.info('Using appointment booking prompt', {
         callSid,
