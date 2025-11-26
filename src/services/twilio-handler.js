@@ -669,10 +669,22 @@ export async function handleTwilioStream(ws) {
         args
       });
 
+      // Return helpful error messages for specific failures
+      let errorMessage;
+      if (functionName === 'get_available_slots') {
+        errorMessage = `I'm having trouble accessing the calendar right now. Could you suggest a few dates and times that work for you?`;
+      } else if (functionName === 'check_availability') {
+        errorMessage = `I'm unable to check availability at the moment. Let me note down your preferred time and we'll confirm it shortly.`;
+      } else if (functionName === 'create_appointment') {
+        errorMessage = `There was an issue creating the appointment. Let me take your information and someone will call you back to confirm.`;
+      } else {
+        errorMessage = `I encountered an error with ${functionName.replace(/_/g, ' ')}. Let's try a different approach.`;
+      }
+
       return {
         success: false,
         error: error.message,
-        message: `Failed to ${functionName.replace(/_/g, ' ')}`
+        message: errorMessage
       };
     }
   }
