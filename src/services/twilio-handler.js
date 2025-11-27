@@ -555,8 +555,18 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
 
         twilioLogger.info('Setting caller timezone', { localTime });
 
-        // Parse the time string (handles formats like "4:30 PM", "16:30", "4:30pm")
-        const timeMatch = localTime.match(/(\d{1,2}):?(\d{2})?\s*(am|pm)?/i);
+        // Parse the time string (handles formats like "4:30 PM", "16:30", "4:30pm", "afternoon")
+        const lowerTime = localTime.toLowerCase();
+
+        // Check if they just said "morning", "afternoon", "evening" without a time
+        if (!lowerTime.match(/\d/) && (lowerTime.includes('morning') || lowerTime.includes('afternoon') || lowerTime.includes('evening'))) {
+          return {
+            success: false,
+            message: 'Need specific time. Please tell me the exact hour.'
+          };
+        }
+
+        const timeMatch = localTime.match(/(\d{1,2}):?(\d{2})?\s*(am|pm|a\.m\.|p\.m\.)?/i);
         if (!timeMatch) {
           return {
             success: false,
@@ -566,12 +576,22 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
 
         let hours = parseInt(timeMatch[1]);
         const minutes = parseInt(timeMatch[2] || '0');
-        const isPM = timeMatch[3]?.toLowerCase() === 'pm';
-        const isAM = timeMatch[3]?.toLowerCase() === 'am';
+        const meridiem = timeMatch[3]?.toLowerCase().replace(/\./g, ''); // Remove periods from a.m./p.m.
+        const isPM = meridiem === 'pm';
+        const isAM = meridiem === 'am';
+
+        // If no AM/PM specified and hour is ambiguous (1-12), return error
+        if (!isPM && !isAM && hours >= 1 && hours <= 12) {
+          return {
+            success: false,
+            message: 'Need to know if AM or PM. Is that morning or afternoon?'
+          };
+        }
 
         // Convert to 24-hour format
         if (isPM && hours !== 12) hours += 12;
         if (isAM && hours === 12) hours = 0;
+        // If they said 13-23, assume 24-hour format (no conversion needed)
 
         // Get current server time
         const serverTime = new Date();
