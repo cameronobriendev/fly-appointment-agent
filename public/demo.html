@@ -284,7 +284,6 @@
     const lastUpdatedEl = document.getElementById('lastUpdated');
     let previousEventIds = new Set();
     let activeCallRefreshInterval = null;
-    let eventFirstSeenTimes = {}; // Track when each event was first seen
 
     async function fetchCalendarEvents() {
       try {
@@ -335,17 +334,9 @@
         return;
       }
 
-      // Track new events for animation and timestamps
+      // Track new events for animation
       const currentEventIds = new Set(events.map(e => e.id));
       const newEventIds = new Set([...currentEventIds].filter(id => !previousEventIds.has(id)));
-
-      // Record first seen time for new events
-      const now = Date.now();
-      newEventIds.forEach(id => {
-        if (!eventFirstSeenTimes[id]) {
-          eventFirstSeenTimes[id] = now;
-        }
-      });
 
       const html = events.map(event => {
         const start = new Date(event.start);
@@ -370,9 +361,9 @@
           hour12: true
         })}`;
 
-        // Get relative time since creation
-        const firstSeen = eventFirstSeenTimes[event.id] || now;
-        const relativeTime = getRelativeTimeString(firstSeen);
+        // Get relative time since actual creation in Google Calendar
+        const createdTimestamp = event.created ? new Date(event.created).getTime() : Date.now();
+        const relativeTime = getRelativeTimeString(createdTimestamp);
 
         return `
           <div class="event-card ${isNew ? 'new-event' : ''}">

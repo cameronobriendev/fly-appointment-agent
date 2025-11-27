@@ -59,6 +59,7 @@ export async function getCalendarEvents(req, res) {
       description: event.description,
       start: event.start.dateTime || event.start.date,
       end: event.end.dateTime || event.end.date,
+      created: event.created, // When the event was created in Google Calendar
       attendees: event.attendees?.map(a => ({
         email: a.email,
         displayName: a.displayName
