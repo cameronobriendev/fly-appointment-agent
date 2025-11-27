@@ -38,7 +38,6 @@ export class DeepgramService {
         // Utterance boundary detection (tuned for phone quality)
         utterance_end_ms: 1500,  // 1.5 seconds of silence = end of utterance (more patient)
         endpointing: 600,        // 600ms VAD-based endpoint detection (less likely to cut off)
-        vad_turnoff: 800,        // Voice Activity Detection turnoff threshold
         // Enhanced accuracy for phone audio
         filler_words: true,      // Keep "um", "uh" for natural conversation
         diarize: false,          // Single speaker (caller)
