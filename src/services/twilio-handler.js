@@ -593,6 +593,30 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
           callerLocalTime: result.reportedLocal24h,
         });
 
+        // Update system message with correct current date in caller's timezone
+        const callerDate = new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: result.tz
+        });
+
+        // Find and update the system message
+        const systemMsgIndex = messages.findIndex(m => m.role === 'system');
+        if (systemMsgIndex !== -1) {
+          const updatedContent = messages[systemMsgIndex].content.replace(
+            /TODAY'S DATE: [^\n]+/,
+            `TODAY'S DATE: ${callerDate}`
+          );
+          messages[systemMsgIndex].content = updatedContent;
+
+          twilioLogger.info('Updated system message with caller timezone date', {
+            timezone: result.tz,
+            callerDate
+          });
+        }
+
         return {
           success: true,
           timezone: result.tz,
@@ -630,32 +654,48 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
         // Get all available slots for a date
         const { date, duration = 30 } = args;
 
-        // Get timezone offset (default to -8 for PST if not set)
-        const timezoneOffset = appointmentData.timezoneOffset || -8;
+        // Get caller's timezone (default to America/Los_Angeles if not set)
+        const timezone = appointmentData.timezone || 'America/Los_Angeles';
 
         // Create date in caller's timezone
         const dateObj = new Date(`${date}T00:00:00`);
         const slots = await getAvailableSlots(dateObj, duration);
 
-        // Get caller's current time
-        const serverNow = new Date();
-        const callerNow = new Date(serverNow.getTime() + (timezoneOffset * 60 * 60 * 1000));
+        // Get caller's current date and time in their timezone
+        const now = new Date();
+        const callerDateParts = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).formatToParts(now);
+
+        const parts = {};
+        callerDateParts.forEach(p => { parts[p.type] = p.value; });
+        const callerNow = new Date(
+          `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`
+        );
+        const callerToday = new Date(`${parts.year}-${parts.month}-${parts.day}`);
 
         twilioLogger.info('Available slots retrieved', {
           date,
           duration,
           slotsFound: slots.length,
-          timezoneOffset,
-          callerCurrentTime: callerNow.toISOString()
+          timezone,
+          callerCurrentTime: callerNow.toISOString(),
+          callerToday: callerToday.toISOString()
         });
 
         // Filter out past times (only for today's date)
         let filteredSlots = slots;
         const requestedDate = new Date(date);
-        const callerToday = new Date(callerNow.getFullYear(), callerNow.getMonth(), callerNow.getDate());
 
         if (requestedDate.getTime() === callerToday.getTime()) {
-          // It's today - filter out times that have already passed
+          // It's today in caller's timezone - filter out times that have already passed
           // Add 2-hour buffer so they can't book something starting in 30 minutes
           const minTime = new Date(callerNow.getTime() + (2 * 60 * 60 * 1000));
 
