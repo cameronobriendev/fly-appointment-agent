@@ -105,10 +105,13 @@
       background: rgba(255, 255, 255, 0.08);
       border-left: 3px solid #3b82f6;
       border-radius: 8px;
-      padding: 12px;
-      margin: 0 auto 8px auto;
-      max-width: 600px;
+      padding: 16px;
+      margin: 0 auto 12px auto;
+      max-width: 700px;
       transition: all 0.2s ease;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
     }
     .event-card:hover {
       background: rgba(255, 255, 255, 0.12);
@@ -129,22 +132,33 @@
         transform: translateY(0);
       }
     }
+    .event-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .event-right {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
     .event-date {
       color: #60a5fa;
       font-weight: 600;
       font-size: 15px;
-      margin-bottom: 4px;
     }
     .event-time {
       color: rgba(255, 255, 255, 0.9);
       font-size: 14px;
-      margin-bottom: 4px;
+    }
+    .event-created {
+      color: #10b981;
+      font-size: 12px;
     }
     .event-details {
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(255, 255, 255, 0.7);
       font-size: 13px;
-      line-height: 1.4;
-      margin-bottom: 2px;
+      line-height: 1.5;
     }
     .no-events {
       text-align: center;
@@ -368,16 +382,18 @@
         // Get relative time since actual creation in Google Calendar
         const relativeTime = getRelativeTimeString(createdTimestamp);
 
+        // Parse description into lines for display
+        const descriptionLines = event.description ? event.description.split('\n').filter(line => line.trim()) : [];
+
         return `
           <div class="event-card ${isNew ? 'new-event' : ''}">
-            <div class="event-date">${dateStr}</div>
-            <div class="event-time">${timeStr}</div>
-            ${event.description ? `<div class="event-details">${event.description}</div>` : ''}
-            ${event.attendees && event.attendees.length > 0 ?
-              `<div class="event-details">👤 ${event.attendees.map(a => a.displayName || a.email).join(', ')}</div>`
-              : ''}
-            <div class="event-details" style="color: #10b981; font-size: 12px; margin-top: 4px; margin-bottom: 0;">
-              ${relativeTime}
+            <div class="event-left">
+              <div class="event-date">${dateStr}</div>
+              <div class="event-time">${timeStr}</div>
+              <div class="event-created">${relativeTime}</div>
+            </div>
+            <div class="event-right">
+              ${descriptionLines.map(line => `<div class="event-details">${line}</div>`).join('')}
             </div>
           </div>
         `;
