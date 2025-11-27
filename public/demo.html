@@ -284,6 +284,7 @@
     const lastUpdatedEl = document.getElementById('lastUpdated');
     let previousEventIds = new Set();
     let activeCallRefreshInterval = null;
+    let eventFirstSeenTimes = {}; // Track when each event was first seen
 
     async function fetchCalendarEvents() {
       try {
@@ -307,6 +308,22 @@
       }
     }
 
+    function getRelativeTimeString(timestamp) {
+      const now = Date.now();
+      const diffMs = now - timestamp;
+      const diffMinutes = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMinutes / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMinutes < 1) return 'Created less than a minute ago';
+      if (diffMinutes === 1) return 'Created 1 minute ago';
+      if (diffMinutes < 60) return `Created ${diffMinutes} minutes ago`;
+      if (diffHours === 1) return 'Created 1 hour ago';
+      if (diffHours < 24) return `Created ${diffHours} hours ago`;
+      if (diffDays === 1) return 'Created 1 day ago';
+      return `Created ${diffDays} days ago`;
+    }
+
     function renderCalendarEvents(events) {
       if (!events || events.length === 0) {
         calendarEventsEl.innerHTML = `
@@ -318,9 +335,17 @@
         return;
       }
 
-      // Track new events for animation
+      // Track new events for animation and timestamps
       const currentEventIds = new Set(events.map(e => e.id));
       const newEventIds = new Set([...currentEventIds].filter(id => !previousEventIds.has(id)));
+
+      // Record first seen time for new events
+      const now = Date.now();
+      newEventIds.forEach(id => {
+        if (!eventFirstSeenTimes[id]) {
+          eventFirstSeenTimes[id] = now;
+        }
+      });
 
       const html = events.map(event => {
         const start = new Date(event.start);
@@ -345,6 +370,10 @@
           hour12: true
         })}`;
 
+        // Get relative time since creation
+        const firstSeen = eventFirstSeenTimes[event.id] || now;
+        const relativeTime = getRelativeTimeString(firstSeen);
+
         return `
           <div class="event-card ${isNew ? 'new-event' : ''}">
             <div class="event-date">${dateStr}</div>
@@ -353,6 +382,9 @@
             ${event.attendees && event.attendees.length > 0 ?
               `<div class="event-details">👤 ${event.attendees.map(a => a.displayName || a.email).join(', ')}</div>`
               : ''}
+            <div class="event-details" style="color: #10b981; font-size: 12px; margin-top: 8px;">
+              ✨ ${relativeTime}
+            </div>
           </div>
         `;
       }).join('');
