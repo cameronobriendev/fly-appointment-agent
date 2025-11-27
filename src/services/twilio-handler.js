@@ -68,6 +68,7 @@ export async function handleTwilioStream(ws) {
     appointmentBooked: false,
     appointmentId: null,
     googleCalendarEventId: null,
+    timezone: null, // IANA timezone string (e.g., "America/Denver")
     timezoneOffset: null, // Offset in hours from UTC (e.g., -8 for PST)
     callerLocalTime: null, // Caller's current local time
   };
@@ -563,83 +564,40 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
 
     try {
       if (functionName === 'set_caller_timezone') {
-        // Parse caller's local time and calculate timezone offset
         const { localTime } = args;
 
         twilioLogger.info('Setting caller timezone', { localTime });
 
-        // Parse the time string (handles formats like "4:30 PM", "16:30", "4:30pm", "afternoon")
-        const lowerTime = localTime.toLowerCase();
+        // Use robust timezone detection
+        const { inferTimezone } = await import('../utils/timezone.js');
+        const result = inferTimezone(localTime);
 
-        // Check if they just said "morning", "afternoon", "evening" without a time
-        if (!lowerTime.match(/\d/) && (lowerTime.includes('morning') || lowerTime.includes('afternoon') || lowerTime.includes('evening'))) {
+        if (result.error) {
           return {
             success: false,
-            message: 'Need specific time. Please tell me the exact hour.'
+            message: result.error
           };
         }
 
-        const timeMatch = localTime.match(/(\d{1,2}):?(\d{2})?\s*(am|pm|a\.m\.|p\.m\.)?/i);
-        if (!timeMatch) {
-          return {
-            success: false,
-            message: 'Could not parse time. Please try again.'
-          };
-        }
+        // Store timezone info in appointment data
+        appointmentData.timezone = result.tz; // IANA timezone string (e.g., "America/Denver")
+        appointmentData.timezoneOffset = Math.round(result.offsetMinutes / 60); // offset in hours for backward compatibility
+        appointmentData.callerLocalTime = result.reportedLocal24h;
 
-        let hours = parseInt(timeMatch[1]);
-        const minutes = parseInt(timeMatch[2] || '0');
-        const meridiem = timeMatch[3]?.toLowerCase().replace(/\./g, ''); // Remove periods from a.m./p.m.
-        const isPM = meridiem === 'pm';
-        const isAM = meridiem === 'am';
-
-        // If no AM/PM specified and hour is ambiguous (1-12), return error
-        if (!isPM && !isAM && hours >= 1 && hours <= 12) {
-          return {
-            success: false,
-            message: 'Need to know if AM or PM. Is that morning or afternoon?'
-          };
-        }
-
-        // Convert to 24-hour format
-        if (isPM && hours !== 12) hours += 12;
-        if (isAM && hours === 12) hours = 0;
-        // If they said 13-23, assume 24-hour format (no conversion needed)
-
-        // Get current server time
-        const serverTime = new Date();
-        const serverHours = serverTime.getUTCHours();
-        const serverMinutes = serverTime.getUTCMinutes();
-
-        // Calculate caller's time in minutes since midnight
-        const callerMinutes = hours * 60 + minutes;
-
-        // Calculate server time in minutes since midnight
-        const serverMinutesTotal = serverHours * 60 + serverMinutes;
-
-        // Calculate offset in hours (caller time - server time)
-        let offsetMinutes = callerMinutes - serverMinutesTotal;
-
-        // Handle day boundary crossings
-        if (offsetMinutes > 12 * 60) offsetMinutes -= 24 * 60;
-        if (offsetMinutes < -12 * 60) offsetMinutes += 24 * 60;
-
-        const offsetHours = Math.round(offsetMinutes / 60);
-
-        // Store in appointment data
-        appointmentData.timezoneOffset = offsetHours;
-        appointmentData.callerLocalTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-
-        twilioLogger.info('Timezone calculated', {
-          callerLocalTime: appointmentData.callerLocalTime,
-          timezoneOffset: offsetHours,
-          serverUTC: `${serverHours}:${serverMinutes}`
+        twilioLogger.info('Timezone detected', {
+          reportedTime: localTime,
+          timezone: result.tz,
+          offsetMinutes: result.offsetMinutes,
+          offsetHours: appointmentData.timezoneOffset,
+          candidates: result.candidates,
+          callerLocalTime: result.reportedLocal24h,
         });
 
         return {
           success: true,
-          timezoneOffset: offsetHours,
-          message: 'Timezone set successfully'
+          timezone: result.tz,
+          offsetMinutes: result.offsetMinutes,
+          message: `Timezone set to ${result.tz}`
         };
 
       } else if (functionName === 'check_availability') {
