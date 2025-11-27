@@ -8,38 +8,32 @@ import { logger } from '../../utils/logger.js';
 
 const apiLogger = logger.child('API:CALENDAR:EVENTS');
 
-// Google Calendar setup
-const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
-const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.replace(/\\n/g, '\n');
-
 export async function getCalendarEvents(req, res) {
   try {
+    const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
+    const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+
     // Validate environment variables
-    if (!CALENDAR_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
+    if (!CALENDAR_ID || !SERVICE_ACCOUNT_KEY) {
       apiLogger.error('Missing Google Calendar credentials', {
         hasCalendarId: !!CALENDAR_ID,
-        hasServiceAccountEmail: !!SERVICE_ACCOUNT_EMAIL,
-        hasPrivateKey: !!PRIVATE_KEY,
-        calendarIdValue: CALENDAR_ID ? `${CALENDAR_ID.substring(0, 20)}...` : 'missing',
+        hasServiceAccountKey: !!SERVICE_ACCOUNT_KEY,
       });
       return res.status(500).json({
         error: 'Calendar not configured',
-        debug: {
-          hasCalendarId: !!CALENDAR_ID,
-          hasServiceAccountEmail: !!SERVICE_ACCOUNT_EMAIL,
-          hasPrivateKey: !!PRIVATE_KEY,
-        }
       });
     }
 
-    // Authenticate with service account
-    const auth = new google.auth.JWT(
-      SERVICE_ACCOUNT_EMAIL,
-      null,
-      PRIVATE_KEY,
-      ['https://www.googleapis.com/auth/calendar']
-    );
+    // Decode base64-encoded service account key (same as working google-calendar.js)
+    const serviceAccountKey = Buffer.from(SERVICE_ACCOUNT_KEY, 'base64').toString('utf-8');
+    const credentials = JSON.parse(serviceAccountKey);
+
+    // Create JWT auth client (same pattern as working code)
+    const auth = new google.auth.JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+    });
 
     const calendar = google.calendar({ version: 'v3', auth });
 
