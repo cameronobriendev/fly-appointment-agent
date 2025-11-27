@@ -48,7 +48,6 @@ export async function getCalendarEvents(req, res) {
       timeMin: todayStart.toISOString(),
       timeMax: weekFromNow.toISOString(),
       singleEvents: true,
-      orderBy: 'startTime',
       maxResults: 50,
     });
 
@@ -68,6 +67,13 @@ export async function getCalendarEvents(req, res) {
       })),
       htmlLink: event.htmlLink,
     }));
+
+    // Sort by creation time (newest first)
+    formattedEvents.sort((a, b) => {
+      const timeA = new Date(a.created).getTime();
+      const timeB = new Date(b.created).getTime();
+      return timeB - timeA; // Descending order (newest first)
+    });
 
     apiLogger.info('Calendar events fetched', {
       eventCount: formattedEvents.length,
