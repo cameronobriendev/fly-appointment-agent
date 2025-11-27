@@ -17,8 +17,20 @@ export async function getCalendarEvents(req, res) {
   try {
     // Validate environment variables
     if (!CALENDAR_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
-      apiLogger.error('Missing Google Calendar credentials');
-      return res.status(500).json({ error: 'Calendar not configured' });
+      apiLogger.error('Missing Google Calendar credentials', {
+        hasCalendarId: !!CALENDAR_ID,
+        hasServiceAccountEmail: !!SERVICE_ACCOUNT_EMAIL,
+        hasPrivateKey: !!PRIVATE_KEY,
+        calendarIdValue: CALENDAR_ID ? `${CALENDAR_ID.substring(0, 20)}...` : 'missing',
+      });
+      return res.status(500).json({
+        error: 'Calendar not configured',
+        debug: {
+          hasCalendarId: !!CALENDAR_ID,
+          hasServiceAccountEmail: !!SERVICE_ACCOUNT_EMAIL,
+          hasPrivateKey: !!PRIVATE_KEY,
+        }
+      });
     }
 
     // Authenticate with service account
