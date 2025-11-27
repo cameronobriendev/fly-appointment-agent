@@ -419,19 +419,19 @@
       const secondsAgo = Math.floor((now - lastUpdateTimestamp) / 1000);
 
       if (secondsAgo < 1) {
-        lastUpdatedEl.innerHTML = 'Updated <span style="opacity: 0">0</span>0 seconds ago';
+        lastUpdatedEl.innerHTML = 'Updated: <span style="opacity: 0">0</span>0 seconds ago';
       } else if (secondsAgo === 1) {
-        lastUpdatedEl.innerHTML = 'Updated <span style="opacity: 0">0</span>1 second<span style="opacity: 0">s</span> ago';
+        lastUpdatedEl.innerHTML = 'Updated: <span style="opacity: 0">0</span>1 second<span style="opacity: 0">s</span> ago';
       } else if (secondsAgo < 10) {
-        lastUpdatedEl.innerHTML = `Updated <span style="opacity: 0">0</span>${secondsAgo} seconds ago`;
+        lastUpdatedEl.innerHTML = `Updated: <span style="opacity: 0">0</span>${secondsAgo} seconds ago`;
       } else if (secondsAgo < 60) {
-        lastUpdatedEl.textContent = `Updated ${secondsAgo} seconds ago`;
+        lastUpdatedEl.textContent = `Updated: ${secondsAgo} seconds ago`;
       } else {
         const minutesAgo = Math.floor(secondsAgo / 60);
         if (minutesAgo === 1) {
-          lastUpdatedEl.textContent = 'Updated 1 minute ago';
+          lastUpdatedEl.textContent = 'Updated: 1 minute ago';
         } else {
-          lastUpdatedEl.textContent = `Updated ${minutesAgo} minutes ago`;
+          lastUpdatedEl.textContent = `Updated: ${minutesAgo} minutes ago`;
         }
       }
     }
