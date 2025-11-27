@@ -230,24 +230,37 @@
       callStatus.textContent = message;
     }
 
-    // Auto-refresh calendar every 30 seconds to show new appointments
+    // Auto-refresh calendar to show new appointments
     const calendarIframe = document.getElementById('calendarIframe');
     const calendarSrc = calendarIframe.src;
+    let activeCallRefreshInterval = null;
 
     function refreshCalendar() {
       // Reload iframe by setting src to itself with cache-busting timestamp
       calendarIframe.src = calendarSrc + '&refresh=' + Date.now();
     }
 
-    // Refresh every 30 seconds
+    // Default: Refresh every 30 seconds when idle
     setInterval(refreshCalendar, 30000);
 
-    // Also refresh 5 seconds after a successful call
+    // When call starts: Refresh every 5 seconds (appointment could be booked any time)
     const originalShowStatus = showStatus;
     showStatus = function(type, message) {
       originalShowStatus(type, message);
       if (type === 'success') {
-        setTimeout(refreshCalendar, 5000);
+        // Clear any existing fast refresh interval
+        if (activeCallRefreshInterval) {
+          clearInterval(activeCallRefreshInterval);
+        }
+        // Start refreshing every 5 seconds during the call
+        activeCallRefreshInterval = setInterval(refreshCalendar, 5000);
+        // Stop fast refresh after 3 minutes (call should be done by then)
+        setTimeout(() => {
+          if (activeCallRefreshInterval) {
+            clearInterval(activeCallRefreshInterval);
+            activeCallRefreshInterval = null;
+          }
+        }, 180000); // 3 minutes
       }
     };
   </script>
