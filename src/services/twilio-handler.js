@@ -316,6 +316,19 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
       const greeting = getInitialGreeting();
       await sendAIResponse(greeting);
 
+      // Add greeting to conversation history so LLM knows it already greeted
+      messages.push({
+        role: 'assistant',
+        content: greeting,
+      });
+
+      // Add greeting to transcript log
+      transcript.push({
+        speaker: 'ai',
+        text: greeting,
+        timestamp: new Date().toISOString(),
+      });
+
       twilioLogger.info('✅ Call initialization complete', {
         callSid,
         totalTime: `${Date.now() - initStartTime}ms`,

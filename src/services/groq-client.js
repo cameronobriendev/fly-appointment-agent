@@ -30,7 +30,7 @@ export class GroqClient {
   async chat(messages, tools = null) {
     try {
       const params = {
-        model: 'llama3-groq-70b-8192-tool-use-preview', // Tool-optimized model
+        model: 'llama-3.3-70b-versatile', // Current recommended model (supports tool use)
         messages: messages,
         temperature: 0.7,
         max_tokens: 150,
@@ -87,7 +87,7 @@ export class GroqClient {
       });
 
       const response = await this.client.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.3-70b-versatile', // Current recommended model
         messages: messages,
         temperature: 0.7,
         max_tokens: 150,
