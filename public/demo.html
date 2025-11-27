@@ -421,7 +421,7 @@
       if (secondsAgo < 1) {
         lastUpdatedEl.textContent = 'Updated 0 seconds ago';
       } else if (secondsAgo === 1) {
-        lastUpdatedEl.textContent = 'Updated 1 second ago';
+        lastUpdatedEl.innerHTML = 'Updated 1 second<span style="opacity: 0">s</span> ago';
       } else if (secondsAgo < 60) {
         lastUpdatedEl.textContent = `Updated ${secondsAgo} seconds ago`;
       } else {
