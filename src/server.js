@@ -20,6 +20,7 @@ import { handleDemoCall } from './api/demo/call.js';
 import { rateLimitDemoCalls } from './middleware/rate-limit.js';
 import { validateDemoCallInput } from './middleware/validate-demo-call.js';
 import { startReminderScheduler } from './services/reminder-scheduler.js';
+import { getCalendarEvents } from './api/calendar/events.js';
 // Admin API imports commented out - not needed for standalone appointment booking
 // import { requireAdminApiKey } from './api/admin/middleware.js';
 // import { getPrompts, updateDemoTemplate, updateClientTemplate, updateDemoFallbackTemplate } from './api/admin/prompts.js';
@@ -129,6 +130,12 @@ app.post('/api/twilio/router', handleTwilioRouter);
  * Protected with rate limiting and input validation
  */
 app.post('/api/demo/call', rateLimitDemoCalls, validateDemoCallInput, handleDemoCall);
+
+/**
+ * Calendar events API endpoint
+ * Returns upcoming calendar events for the demo page
+ */
+app.get('/api/calendar/events', getCalendarEvents);
 
 /**
  * Admin API endpoints - COMMENTED OUT for standalone appointment booking

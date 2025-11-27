@@ -1,10 +1,10 @@
 /**
- * API endpoint to fetch calendar events
+ * Calendar events API handler
  * Returns upcoming events from Google Calendar
  */
 
 import { google } from 'googleapis';
-import { logger } from '../../src/utils/logger.js';
+import { logger } from '../../utils/logger.js';
 
 const apiLogger = logger.child('API:CALENDAR:EVENTS');
 
@@ -13,12 +13,7 @@ const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 const PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-export default async function handler(req, res) {
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export async function getCalendarEvents(req, res) {
   try {
     // Validate environment variables
     if (!CALENDAR_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
