@@ -27,7 +27,7 @@ export class DeepgramService {
   async startStream(onTranscript, onError) {
     try {
       const connection = this.client.listen.live({
-        model: 'nova-2',
+        model: 'nova-3',         // Latest model - best accuracy
         language: 'en-US',
         smart_format: true,
         interim_results: true,   // REQUIRED for utterance_end_ms
@@ -35,9 +35,13 @@ export class DeepgramService {
         encoding: 'mulaw',
         sample_rate: 8000,
         channels: 1,
-        // Utterance boundary detection
-        utterance_end_ms: 1000,  // 1 second of silence = end of utterance (fallback)
-        endpointing: 400,        // 400ms VAD-based endpoint detection (balance speed vs interruptions)
+        // Utterance boundary detection (tuned for phone quality)
+        utterance_end_ms: 1500,  // 1.5 seconds of silence = end of utterance (more patient)
+        endpointing: 600,        // 600ms VAD-based endpoint detection (less likely to cut off)
+        vad_turnoff: 800,        // Voice Activity Detection turnoff threshold
+        // Enhanced accuracy for phone audio
+        filler_words: true,      // Keep "um", "uh" for natural conversation
+        diarize: false,          // Single speaker (caller)
       });
 
       // Accumulate transcript segments until speech is complete
