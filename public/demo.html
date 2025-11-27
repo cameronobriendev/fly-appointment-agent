@@ -282,7 +282,6 @@
     // Calendar event fetching and display
     const calendarEventsEl = document.getElementById('calendarEvents');
     const lastUpdatedEl = document.getElementById('lastUpdated');
-    let previousEventIds = new Set();
     let activeCallRefreshInterval = null;
 
     async function fetchCalendarEvents() {
@@ -334,14 +333,14 @@
         return;
       }
 
-      // Track new events for animation
-      const currentEventIds = new Set(events.map(e => e.id));
-      const newEventIds = new Set([...currentEventIds].filter(id => !previousEventIds.has(id)));
-
       const html = events.map(event => {
         const start = new Date(event.start);
         const end = new Date(event.end);
-        const isNew = newEventIds.has(event.id);
+
+        // Check if event was created within last 5 minutes (for green highlight)
+        const createdTimestamp = event.created ? new Date(event.created).getTime() : Date.now();
+        const minutesSinceCreation = Math.floor((Date.now() - createdTimestamp) / 60000);
+        const isNew = minutesSinceCreation < 5;
 
         // Format date (e.g., "Monday, December 5")
         const dateStr = start.toLocaleDateString('en-US', {
@@ -362,7 +361,6 @@
         })}`;
 
         // Get relative time since actual creation in Google Calendar
-        const createdTimestamp = event.created ? new Date(event.created).getTime() : Date.now();
         const relativeTime = getRelativeTimeString(createdTimestamp);
 
         return `
@@ -381,7 +379,6 @@
       }).join('');
 
       calendarEventsEl.innerHTML = html;
-      previousEventIds = currentEventIds;
     }
 
     function updateLastUpdatedTime() {
