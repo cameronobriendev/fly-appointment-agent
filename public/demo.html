@@ -317,9 +317,10 @@
       if (diffMinutes === 1) return 'Created 1 minute ago';
       if (diffMinutes < 60) return `Created ${diffMinutes} minutes ago`;
       if (diffHours === 1) return 'Created 1 hour ago';
-      if (diffHours < 24) return `Created ${diffHours} hours ago`;
-      if (diffDays === 1) return 'Created 1 day ago';
-      return `Created ${diffDays} days ago`;
+      if (diffHours < 23) return `Created ${diffHours} hours ago`;
+      if (diffHours < 48) return 'Created a day ago';
+      if (diffDays < 7) return `Created ${diffDays} days ago`;
+      return 'Created more than a week ago';
     }
 
     function renderCalendarEvents(events) {
@@ -372,7 +373,7 @@
               `<div class="event-details">👤 ${event.attendees.map(a => a.displayName || a.email).join(', ')}</div>`
               : ''}
             <div class="event-details" style="color: #10b981; font-size: 12px; margin-top: 8px;">
-              ✨ ${relativeTime}
+              ${relativeTime}
             </div>
           </div>
         `;
