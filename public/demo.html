@@ -101,6 +101,55 @@
       color: #3b82f6;
       text-decoration: underline;
     }
+    .event-card {
+      background: rgba(255, 255, 255, 0.08);
+      border-left: 3px solid #3b82f6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+    .event-card:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateX(4px);
+    }
+    .event-card.new-event {
+      animation: slideIn 0.4s ease;
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+    }
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .event-date {
+      color: #60a5fa;
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+    .event-time {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+    .event-details {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .no-events {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -153,21 +202,23 @@
             <div id="callStatus" class="call-status"></div>
           </div>
 
-          <!-- Embedded Google Calendar -->
+          <!-- Live Calendar Events -->
           <div class="calendar-embed">
-            <h3 style="color: rgba(255, 255, 255, 0.9); margin-bottom: 16px; font-size: 18px;">Live Calendar</h3>
-            <p style="color: rgba(255, 255, 255, 0.6); margin-bottom: 16px; font-size: 14px;">
-              Watch your appointment appear in real-time after booking
-            </p>
-            <iframe
-              id="calendarIframe"
-              src="https://calendar.google.com/calendar/embed?src=e0d35f7dbd44c85cbba77c75a737a50641e2ee3c677415ade06ef199b8617660%40group.calendar.google.com&ctz=America%2FLos_Angeles&mode=WEEK&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0"
-              style="border: 0; border-radius: 8px;"
-              width="100%"
-              height="600"
-              frameborder="0"
-              scrolling="no"
-            ></iframe>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <h3 style="color: rgba(255, 255, 255, 0.9); margin: 0 0 8px 0; font-size: 18px;">Live Calendar</h3>
+                <p style="color: rgba(255, 255, 255, 0.6); margin: 0; font-size: 14px;">
+                  Watch your appointment appear in real-time after booking
+                </p>
+              </div>
+              <div id="lastUpdated" style="color: rgba(255, 255, 255, 0.5); font-size: 12px;"></div>
+            </div>
+
+            <div id="calendarEvents" style="min-height: 400px;">
+              <div style="text-align: center; padding: 60px 20px; color: rgba(255, 255, 255, 0.5);">
+                Loading calendar...
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -230,18 +281,103 @@
       callStatus.textContent = message;
     }
 
-    // Auto-refresh calendar to show new appointments
-    const calendarIframe = document.getElementById('calendarIframe');
-    const calendarSrc = calendarIframe.src;
+    // Calendar event fetching and display
+    const calendarEventsEl = document.getElementById('calendarEvents');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    let previousEventIds = new Set();
     let activeCallRefreshInterval = null;
 
-    function refreshCalendar() {
-      // Reload iframe by setting src to itself with cache-busting timestamp
-      calendarIframe.src = calendarSrc + '&refresh=' + Date.now();
+    async function fetchCalendarEvents() {
+      try {
+        const response = await fetch('/api/calendar/events');
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch events');
+        }
+
+        renderCalendarEvents(data.events);
+        updateLastUpdatedTime();
+
+      } catch (error) {
+        console.error('Calendar fetch error:', error);
+        calendarEventsEl.innerHTML = `
+          <div class="no-events">
+            Unable to load calendar events
+          </div>
+        `;
+      }
     }
 
+    function renderCalendarEvents(events) {
+      if (!events || events.length === 0) {
+        calendarEventsEl.innerHTML = `
+          <div class="no-events">
+            No upcoming appointments<br>
+            <span style="font-size: 12px; opacity: 0.7;">Book your first appointment by calling!</span>
+          </div>
+        `;
+        return;
+      }
+
+      // Track new events for animation
+      const currentEventIds = new Set(events.map(e => e.id));
+      const newEventIds = new Set([...currentEventIds].filter(id => !previousEventIds.has(id)));
+
+      const html = events.map(event => {
+        const start = new Date(event.start);
+        const end = new Date(event.end);
+        const isNew = newEventIds.has(event.id);
+
+        // Format date (e.g., "Monday, December 5")
+        const dateStr = start.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        // Format time (e.g., "2:00 PM - 3:00 PM")
+        const timeStr = `${start.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })} - ${end.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        })}`;
+
+        return `
+          <div class="event-card ${isNew ? 'new-event' : ''}">
+            <div class="event-date">${dateStr}</div>
+            <div class="event-time">${timeStr}</div>
+            ${event.description ? `<div class="event-details">${event.description}</div>` : ''}
+            ${event.attendees && event.attendees.length > 0 ?
+              `<div class="event-details">👤 ${event.attendees.map(a => a.displayName || a.email).join(', ')}</div>`
+              : ''}
+          </div>
+        `;
+      }).join('');
+
+      calendarEventsEl.innerHTML = html;
+      previousEventIds = currentEventIds;
+    }
+
+    function updateLastUpdatedTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      lastUpdatedEl.textContent = `Updated ${timeStr}`;
+    }
+
+    // Initial fetch
+    fetchCalendarEvents();
+
     // Default: Refresh every 30 seconds when idle
-    setInterval(refreshCalendar, 30000);
+    setInterval(fetchCalendarEvents, 30000);
 
     // When call starts: Refresh every 5 seconds (appointment could be booked any time)
     const originalShowStatus = showStatus;
@@ -253,7 +389,7 @@
           clearInterval(activeCallRefreshInterval);
         }
         // Start refreshing every 5 seconds during the call
-        activeCallRefreshInterval = setInterval(refreshCalendar, 5000);
+        activeCallRefreshInterval = setInterval(fetchCalendarEvents, 5000);
         // Stop fast refresh after 3 minutes (call should be done by then)
         setTimeout(() => {
           if (activeCallRefreshInterval) {
