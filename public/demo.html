@@ -160,6 +160,7 @@
               Watch your appointment appear in real-time after booking
             </p>
             <iframe
+              id="calendarIframe"
               src="https://calendar.google.com/calendar/embed?src=e0d35f7dbd44c85cbba77c75a737a50641e2ee3c677415ade06ef199b8617660%40group.calendar.google.com&ctz=America%2FLos_Angeles&mode=WEEK&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=0&showCalendars=0"
               style="border: 0; border-radius: 8px;"
               width="100%"
@@ -228,6 +229,27 @@
       callStatus.className = `call-status ${type}`;
       callStatus.textContent = message;
     }
+
+    // Auto-refresh calendar every 30 seconds to show new appointments
+    const calendarIframe = document.getElementById('calendarIframe');
+    const calendarSrc = calendarIframe.src;
+
+    function refreshCalendar() {
+      // Reload iframe by setting src to itself with cache-busting timestamp
+      calendarIframe.src = calendarSrc + '&refresh=' + Date.now();
+    }
+
+    // Refresh every 30 seconds
+    setInterval(refreshCalendar, 30000);
+
+    // Also refresh 5 seconds after a successful call
+    const originalShowStatus = showStatus;
+    showStatus = function(type, message) {
+      originalShowStatus(type, message);
+      if (type === 'success') {
+        setTimeout(refreshCalendar, 5000);
+      }
+    };
   </script>
 </body>
 </html>
