@@ -37,13 +37,15 @@ export async function getCalendarEvents(req, res) {
 
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // Get events from now onwards (next 7 days)
+    // Get events from today (midnight) onwards (next 7 days)
+    // This ensures events that started earlier today are still visible
     const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
-      timeMin: now.toISOString(),
+      timeMin: todayStart.toISOString(),
       timeMax: weekFromNow.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
