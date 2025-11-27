@@ -412,12 +412,36 @@ This gives the caller time to process the number. Example: "Is (555) 123-4567...
           callSid,
           toolCount: response.toolCalls.length,
           tools: response.toolCalls.map(tc => tc.function.name),
+          hasContentToo: !!response.content, // Check if LLM provided BOTH content and tool_calls
         });
 
+        // If LLM provided content along with tool_calls (e.g., "Let me check..."), speak it FIRST
+        // This prevents awkward silence while tools execute
+        if (response.content && response.content.trim().length > 0) {
+          const cleanContent = stripFunctionCalls(response.content);
+
+          twilioLogger.info('🗣️ SPEAKING PRE-TOOL CONTENT', {
+            callSid,
+            content: cleanContent,
+            aboutToExecuteTools: response.toolCalls.map(tc => tc.function.name),
+          });
+
+          // Speak the content immediately (e.g., "Let me check the calendar")
+          await sendAIResponse(cleanContent);
+
+          // Add to transcript
+          transcript.push({
+            speaker: 'ai',
+            text: cleanContent,
+            timestamp: new Date().toISOString(),
+          });
+        }
+
         // Add assistant's tool call message to history
+        // Include the content if it was provided (API allows both content + tool_calls)
         messages.push({
           role: 'assistant',
-          content: null,
+          content: response.content || null,
           tool_calls: response.toolCalls,
         });
 
