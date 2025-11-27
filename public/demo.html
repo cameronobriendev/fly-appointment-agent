@@ -412,7 +412,7 @@
       const secondsAgo = Math.floor((now - lastUpdateTimestamp) / 1000);
 
       if (secondsAgo < 1) {
-        lastUpdatedEl.textContent = 'Updated just now';
+        lastUpdatedEl.textContent = 'Updated 0 seconds ago';
       } else if (secondsAgo === 1) {
         lastUpdatedEl.textContent = 'Updated 1 second ago';
       } else if (secondsAgo < 60) {
