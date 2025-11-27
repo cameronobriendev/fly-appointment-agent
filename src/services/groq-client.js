@@ -30,7 +30,7 @@ export class GroqClient {
   async chat(messages, tools = null) {
     try {
       const params = {
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama3-groq-70b-8192-tool-use-preview', // Tool-optimized model
         messages: messages,
         temperature: 0.7,
         max_tokens: 150,

@@ -117,16 +117,16 @@ export class GeminiClient {
 
   /**
    * Convert OpenAI function format to Gemini tools format
-   * @param {Array} functions - OpenAI format functions
+   * @param {Array} functions - OpenAI format functions (with nested .function property)
    * @returns {Array} Gemini format tools
    */
   _convertFunctions(functions) {
     return [
       {
         functionDeclarations: functions.map((fn) => ({
-          name: fn.name,
-          description: fn.description,
-          parameters: fn.parameters,
+          name: fn.function.name,
+          description: fn.function.description,
+          parameters: fn.function.parameters,
         })),
       },
     ];
