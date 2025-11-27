@@ -285,6 +285,7 @@
     const calendarEventsEl = document.getElementById('calendarEvents');
     const lastUpdatedEl = document.getElementById('lastUpdated');
     let activeCallRefreshInterval = null;
+    let lastUpdateTimestamp = null;
 
     async function fetchCalendarEvents() {
       try {
@@ -296,6 +297,7 @@
         }
 
         renderCalendarEvents(data.events);
+        lastUpdateTimestamp = Date.now();
         updateLastUpdatedTime();
 
       } catch (error) {
@@ -385,14 +387,32 @@
     }
 
     function updateLastUpdatedTime() {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-      lastUpdatedEl.textContent = `Updated ${timeStr}`;
+      if (!lastUpdateTimestamp) {
+        lastUpdatedEl.textContent = '';
+        return;
+      }
+
+      const now = Date.now();
+      const secondsAgo = Math.floor((now - lastUpdateTimestamp) / 1000);
+
+      if (secondsAgo < 1) {
+        lastUpdatedEl.textContent = 'Updated just now';
+      } else if (secondsAgo === 1) {
+        lastUpdatedEl.textContent = 'Updated 1 second ago';
+      } else if (secondsAgo < 60) {
+        lastUpdatedEl.textContent = `Updated ${secondsAgo} seconds ago`;
+      } else {
+        const minutesAgo = Math.floor(secondsAgo / 60);
+        if (minutesAgo === 1) {
+          lastUpdatedEl.textContent = 'Updated 1 minute ago';
+        } else {
+          lastUpdatedEl.textContent = `Updated ${minutesAgo} minutes ago`;
+        }
+      }
     }
+
+    // Update the "Updated X seconds ago" display every second
+    setInterval(updateLastUpdatedTime, 1000);
 
     // Initial fetch
     fetchCalendarEvents();
