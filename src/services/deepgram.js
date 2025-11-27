@@ -35,9 +35,9 @@ export class DeepgramService {
         encoding: 'mulaw',
         sample_rate: 8000,
         channels: 1,
-        // Utterance boundary detection (tuned for phone quality)
-        utterance_end_ms: 1500,  // 1.5 seconds of silence = end of utterance (more patient)
-        endpointing: 600,        // 600ms VAD-based endpoint detection (less likely to cut off)
+        // Utterance boundary detection (fast response)
+        utterance_end_ms: 1000,  // 1 second of silence = end of utterance
+        endpointing: 300,        // 300ms VAD-based endpoint detection (fast, snappy)
         // Enhanced accuracy for phone audio
         filler_words: true,      // Keep "um", "uh" for natural conversation
         diarize: false,          // Single speaker (caller)
